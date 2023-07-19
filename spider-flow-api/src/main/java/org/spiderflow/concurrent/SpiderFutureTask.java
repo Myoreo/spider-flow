@@ -1,6 +1,7 @@
 package org.spiderflow.concurrent;
 
 import java.util.concurrent.FutureTask;
+
 import org.spiderflow.concurrent.SpiderFlowThreadPoolExecutor.SubThreadPoolExecutor;
 import org.spiderflow.model.SpiderNode;
 
@@ -10,8 +11,8 @@ public class SpiderFutureTask<V> extends FutureTask {
 
     private SpiderNode node;
 
-    public SpiderFutureTask(Runnable runnable, V result, SpiderNode node,SubThreadPoolExecutor executor) {
-        super(runnable,result);
+    public SpiderFutureTask(Runnable runnable, V result, SpiderNode node, SubThreadPoolExecutor executor) {
+        super(runnable, result);
         this.executor = executor;
         this.node = node;
     }

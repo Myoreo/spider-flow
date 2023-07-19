@@ -1,6 +1,7 @@
 package org.spiderflow.core;
 
 import com.alibaba.ttl.TtlRunnable;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
@@ -39,6 +40,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author jmxd
  */
 @Component
+@Slf4j
 public class Spider {
 
 	@Autowired(required = false)
@@ -67,7 +69,15 @@ public class Spider {
 		executorInstance = new SpiderFlowThreadPoolExecutor(totalThreads);
 	}
 
+	/**
+	 * 执行爬虫 入口
+	 * @param spiderFlow
+	 * @param context
+	 * @param variables
+	 * @return
+	 */
 	public List<SpiderOutput> run(SpiderFlow spiderFlow, SpiderContext context, Map<String, Object> variables) {
+		//执行爬虫 入口
 		if (variables == null) {
 			variables = new HashMap<>();
 		}
@@ -111,7 +121,7 @@ public class Spider {
 		int nThreads = NumberUtils.toInt(root.getStringJsonValue(ShapeExecutor.THREAD_COUNT), defaultThreads);
 		String strategy = root.getStringJsonValue("submit-strategy");
 		ThreadSubmitStrategy submitStrategy;
-		//选择提交策略，这里一定要使用new,不能与其他实例共享
+		//同层节点 选择提交策略，这里一定要使用new,不能与其他实例共享
 		if("linked".equalsIgnoreCase(strategy)){
 			submitStrategy = new LinkedThreadSubmitStrategy();
 		}else if("child".equalsIgnoreCase(strategy)){
@@ -122,7 +132,7 @@ public class Spider {
 			submitStrategy = new RandomThreadSubmitStrategy();
 		}
 		//创建子线程池，采用一父多子的线程池,子线程数不能超过总线程数（超过时进入队列等待）,+1是因为会占用一个线程用来调度执行下一级
-		SubThreadPoolExecutor pool = executorInstance.createSubThreadPoolExecutor(Math.max(nThreads,1) + 1,submitStrategy);
+		SubThreadPoolExecutor pool = executorInstance.createSubThreadPoolExecutor(Math.max(nThreads, 1) + 1, submitStrategy);
 		context.setRootNode(root);
 		context.setThreadPool(pool);
 		//触发监听器
@@ -208,7 +218,7 @@ public class Spider {
 		if (!executeCondition(fromNode, node, variables, context)) {
 			return;
 		}
-		logger.debug("执行节点[{}:{}]", node.getNodeName(), node.getNodeId());
+		logger.info("执行节点[{}:{}]", node.getNodeName(), node.getNodeId());
 		//找到对应的执行器
 		ShapeExecutor executor = ExecutorsUtils.get(shape);
 		if (executor == null) {
@@ -295,10 +305,12 @@ public class Spider {
 			}
 			LinkedBlockingQueue<Future<?>> futureQueue = context.getFutureQueue();
 			for (SpiderTask task : tasks) {
-				if(executor.isThread()){	//判断节点是否是异步运行
+				if(executor.isThread()){
+					//判断节点是否是异步运行,默认异步执行
 					//提交任务至线程池中,并将Future添加到队列末尾
 					futureQueue.add(context.getThreadPool().submitAsync(task.runnable, task, node));
 				}else{
+					//目前仅VariableExecutor同步执行
 					FutureTask<SpiderTask> futureTask = new FutureTask<>(task.runnable, task);
 					futureTask.run();
 					futureQueue.add(futureTask);
