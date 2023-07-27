@@ -1,7 +1,7 @@
 package org.spiderflow.core.http;
 
-import com.squareup.okhttp.ConnectionPool;
-import com.squareup.okhttp.OkHttpClient;
+import okhttp3.ConnectionPool;
+import okhttp3.OkHttpClient;
 
 import java.util.concurrent.TimeUnit;
 
@@ -20,12 +20,13 @@ public class OkHttpClientSingle {
         if (clientInstance == null) {
             synchronized (OkHttpClientSingle.class) {
                 if (clientInstance == null) {
-                    clientInstance = new OkHttpClient();
-                    clientInstance.setConnectTimeout(5, TimeUnit.SECONDS);
-                    clientInstance.setWriteTimeout(5, TimeUnit.SECONDS);
-                    clientInstance.setReadTimeout(15, TimeUnit.SECONDS);
-                    clientInstance.setConnectionPool(new ConnectionPool(10, 5, TimeUnit.MILLISECONDS));
-                    clientInstance.setRetryOnConnectionFailure(true);
+                    clientInstance = new OkHttpClient.Builder()
+                            .connectTimeout(5, TimeUnit.SECONDS)
+                            .readTimeout(5, TimeUnit.SECONDS)
+                            .writeTimeout(5, TimeUnit.SECONDS)
+                            .retryOnConnectionFailure(true)
+                            .connectionPool(new ConnectionPool())
+                            .build();
                 }
             }
         }

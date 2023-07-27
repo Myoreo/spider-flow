@@ -26,7 +26,7 @@
 		<guava.version>28.2-jre</guava.version>
 		<jsoup.version>1.11.3</jsoup.version>
 		<xsoup.version>0.3.1</xsoup.version>
-		<okhttp.version>2.7.5</okhttp.version>
+		<okhttp.version>3.14.9</okhttp.version>
 	</properties>
 
 	<dependencies>
@@ -100,7 +100,7 @@
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/com.squareup.okhttp/okhttp -->
 		<dependency>
-			<groupId>com.squareup.okhttp</groupId>
+			<groupId>com.squareup.okhttp3</groupId>
 			<artifactId>okhttp</artifactId>
 			<version>${okhttp.version}</version>
 		</dependency>

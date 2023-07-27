@@ -1,9 +1,9 @@
 package org.spiderflow.core.io;
 
+import com.alibaba.fastjson.JSONObject;
 import okhttp3.*;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -12,19 +12,38 @@ import java.util.concurrent.TimeUnit;
  * @Author : xuaoping
  * @Date : 2023/07
  */
-public class GetHttpRequest implements HttpRequest {
+public class PostHttpRequest implements HttpRequest {
+
+    public static final MediaType JSON
+            = MediaType.get("application/json; charset=utf-8");
+
+    public static final MediaType TEXT
+            = MediaType.get("text/plain; charset=utf-8");
+
+    public static final MediaType FORM_DATA
+            = MultipartBody.FORM;
+
+    public static final MediaType FORM_URLENCODED
+            = MediaType.get("application/x-www-form-urlencoded");
+
+    private MediaType mediaType;
 
     private HttpUrl.Builder urlBuilder;
 
     private Request.Builder reqBuild;
 
-    private OkHttpClient.Builder httpClientBuilder;
-
     private Map<String, String> cookies;
 
-    public GetHttpRequest() {
-        reqBuild = new Request.Builder().get();
-        cookies = new HashMap<>();
+    private String body;
+
+    private Map<String, String> formParams;
+
+    private OkHttpClient.Builder httpClientBuilder;
+
+    public PostHttpRequest() {
+        reqBuild = new Request.Builder();
+        new FormBody.Builder();
+        this.cookies = new HashMap<>();
         httpClientBuilder = new OkHttpClient.Builder().retryOnConnectionFailure(true);
     }
 
@@ -69,23 +88,40 @@ public class GetHttpRequest implements HttpRequest {
 
     @Override
     public HttpRequest mediaType(MediaType mediaType) {
+        this.mediaType = mediaType;
+        if (mediaType == FORM_DATA || mediaType == FORM_URLENCODED) {
+            formParams = new HashMap<>();
+        }
         return this;
     }
 
     @Override
     public HttpRequest data(String key, String value) {
-        urlBuilder.addQueryParameter(key, value);
+        if (formParams != null) {
+            formParams.put(key, value);
+        } else {
+            urlBuilder.addQueryParameter(key, value);
+        }
         return this;
     }
 
     @Override
     public HttpRequest data(String key, Object value) {
-        urlBuilder.addQueryParameter(key, value.toString());
+        if (formParams != null) {
+            formParams.put(key, value.toString());
+        } else {
+            urlBuilder.addQueryParameter(key, value.toString());
+        }
         return this;
     }
 
     @Override
     public HttpRequest data(Object body) {
+        if (!body.getClass().equals(String.class)) {
+            this.body = JSONObject.toJSONString(body);
+        } else {
+            this.body = body.toString();
+        }
         return this;
     }
 
@@ -124,7 +160,19 @@ public class GetHttpRequest implements HttpRequest {
             stringBuilder.deleteCharAt(stringBuilder.length() - 1);
             reqBuild.header("Cookie", stringBuilder.toString());
         }
-        Request request = reqBuild.get().build();
+        RequestBody requestBody;
+        if (FORM_DATA == mediaType) {
+            MultipartBody.Builder builder = new MultipartBody.Builder().setType(FORM_DATA);
+            formParams.forEach(builder::addFormDataPart);
+            requestBody = builder.build();
+        } else if (FORM_URLENCODED == mediaType) {
+            FormBody.Builder builder = new FormBody.Builder();
+            formParams.forEach(builder::add);
+            requestBody = builder.build();
+        } else {
+            requestBody = RequestBody.create(mediaType, body == null ? "" : body);
+        }
+        Request request = reqBuild.post(requestBody).build();
         OkHttpClient clientInstance = httpClientBuilder.build();
         Response response = clientInstance.newCall(request).execute();
         return new HttpResponse(response);
