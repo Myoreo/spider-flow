@@ -80,7 +80,9 @@ public class GetHttpRequest implements HttpRequest {
 
     @Override
     public HttpRequest data(String key, Object value) {
-        urlBuilder.addQueryParameter(key, value.toString());
+        if (value != null) {
+            urlBuilder.addQueryParameter(key, value.toString());
+        }
         return this;
     }
 

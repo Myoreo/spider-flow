@@ -218,7 +218,7 @@ public class Spider {
 		if (!executeCondition(fromNode, node, variables, context)) {
 			return;
 		}
-		logger.info("执行节点[{}:{}]", node.getNodeName(), node.getNodeId());
+		logger.debug("执行节点[{}:{}]",  node.getNodeName(), node.getNodeId());
 		//找到对应的执行器
 		ShapeExecutor executor = ExecutorsUtils.get(shape);
 		if (executor == null) {
@@ -305,6 +305,9 @@ public class Spider {
 			}
 			LinkedBlockingQueue<Future<?>> futureQueue = context.getFutureQueue();
 			for (SpiderTask task : tasks) {
+//				FutureTask<SpiderTask> futureTask = new FutureTask<>(task.runnable, task);
+//				futureTask.run();
+//				futureQueue.add(futureTask);
 				if(executor.isThread()){
 					//判断节点是否是异步运行,默认异步执行
 					//提交任务至线程池中,并将Future添加到队列末尾
